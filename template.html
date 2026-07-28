@@ -1,0 +1,507 @@
+<!-- templates/password_reset_es.html -->
+{% extends "appbuilder/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Pestañas -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#resetTab" role="tab" data-toggle="tab">
+                        <i class="fa fa-key"></i> Restablecer Contraseña
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#templateTab" role="tab" data-toggle="tab">
+                        <i class="fa fa-envelope"></i> Personalizar Email
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#auditTab" role="tab" data-toggle="tab">
+                        <i class="fa fa-history"></i> Auditoría
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content" style="padding: 20px; border: 1px solid #ddd; border-top: none;">
+                
+                <!-- Pestaña 1: Restablecer Contraseña -->
+                <div role="tabpanel" class="tab-pane active" id="resetTab">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="input-group">
+                                <input type="text" id="userSearch" class="form-control" 
+                                       placeholder="Buscar por nombre, email o usuario...">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary" onclick="buscarUsuarios()">
+                                        <i class="fa fa-search"></i> Buscar
+                                    </button>
+                                </span>
+                            </div>
+                            <small class="text-muted">Mínimo 3 caracteres</small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div id="searchResults">
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle"></i> 
+                            Busque usuarios para restablecer sus contraseñas
+                        </div>
+                    </div>
+
+                    <div id="userActions" style="display:none;" class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4>Usuario Seleccionado</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div id="selectedUserInfo"></div>
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label>Mensaje adicional para el email:</label>
+                                <textarea id="mensajeAdicional" class="form-control" rows="2" 
+                                          placeholder="Mensaje personalizado (opcional)"></textarea>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-warning" onclick="restablecerPassword(false)">
+                                    <i class="fa fa-refresh"></i> Restablecer Solo
+                                </button>
+                                <button class="btn btn-success" onclick="restablecerPassword(true)">
+                                    <i class="fa fa-envelope"></i> Restablecer y Notificar
+                                </button>
+                                <button class="btn btn-danger" onclick="limpiarSeleccion()">
+                                    <i class="fa fa-times"></i> Cancelar
+                                </button>
+                            </div>
+                            <div id="resetResult" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña 2: Personalizar Email -->
+                <div role="tabpanel" class="tab-pane" id="templateTab">
+                    <h4>Personalizar Plantilla de Email</h4>
+                    <p class="text-muted">
+                        Personalice el contenido del email. Use <code>{variable}</code> para contenido dinámico.
+                    </p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Asunto</label>
+                                <input type="text" id="tplAsunto" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Saludo</label>
+                                <input type="text" id="tplSaludo" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Introducción</label>
+                                <textarea id="tplIntro" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Etiqueta de Contraseña</label>
+                                <input type="text" id="tplEtiquetaPassword" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nota Importante</label>
+                                <textarea id="tplNotaImportante" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Texto del Botón</label>
+                                <input type="text" id="tplBotonAccion" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Cierre</label>
+                                <input type="text" id="tplCierre" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Firma</label>
+                                <input type="text" id="tplFirma" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Pie de Página</label>
+                                <textarea id="tplPiePagina" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Variables Disponibles</label>
+                        <div class="well">
+                            <code>{app_name}</code> - Nombre de la aplicación<br>
+                            <code>{first_name}</code> - Nombre del usuario<br>
+                            <code>{username}</code> - Nombre de usuario<br>
+                            <code>{email}</code> - Email del usuario<br>
+                            <code>{new_password}</code> - Contraseña generada<br>
+                            <code>{base_url}</code> - URL de Superset<br>
+                            <code>{mensaje_adicional}</code> - Mensaje personalizado
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="guardarPlantilla()">
+                        <i class="fa fa-save"></i> Guardar Plantilla
+                    </button>
+                    <button class="btn btn-default" onclick="cargarPlantilla()">
+                        <i class="fa fa-refresh"></i> Restaurar Predeterminada
+                    </button>
+                </div>
+
+                <!-- Pestaña 3: Auditoría -->
+                <div role="tabpanel" class="tab-pane" id="auditTab">
+                    <div id="auditLogContent">
+                        <div class="text-center">
+                            <i class="fa fa-spinner fa-spin fa-2x"></i>
+                            Cargando registro de auditoría...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Contraseña Restablecida</h4>
+            </div>
+            <div class="modal-body" id="successModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.user-item {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin: 5px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.user-item:hover {
+    background: #f5f5f5;
+    border-color: #337ab7;
+}
+.user-item.selected {
+    background: #d9edf7;
+    border-color: #31708f;
+}
+.password-display {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 18px;
+    border: 1px dashed #ddd;
+}
+</style>
+
+<script>
+let usuarioSeleccionado = null;
+
+function buscarUsuarios() {
+    const searchTerm = document.getElementById('userSearch').value.trim();
+    if (searchTerm.length < 3) {
+        alert('Por favor ingrese al menos 3 caracteres');
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '<div class="text-center"><i class="fa fa-spinner fa-spin fa-2x"></i></div>';
+    
+    fetch('/password-reset-es/buscar-usuarios', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ search_term: searchTerm })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+            return;
+        }
+        
+        if (!data.usuarios || data.usuarios.length === 0) {
+            resultsDiv.innerHTML = `<div class="alert alert-info">No se encontraron usuarios</div>`;
+            return;
+        }
+        
+        let html = '<div class="list-group">';
+        data.usuarios.forEach(user => {
+            const active = user.active !== 'False' && user.active !== false;
+            const nombreCompleto = [user.first_name || '', user.last_name || ''].filter(Boolean).join(' ') || 'Sin nombre';
+            
+            html += `
+                <div class="list-group-item user-item" onclick="seleccionarUsuario(${JSON.stringify(user).replace(/"/g, '&quot;')})">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>${nombreCompleto}</strong>
+                            <br>
+                            <span class="text-muted"><i class="fa fa-envelope"></i> ${user.email || 'Sin email'}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge">${user.username || 'Sin usuario'}</span>
+                            ${active ? '<span class="label label-success">Activo</span>' : '<span class="label label-danger">Inactivo</span>'}
+                        </div>
+                        <div class="col-md-2 text-right">
+                            <i class="fa fa-chevron-right text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+function seleccionarUsuario(user) {
+    usuarioSeleccionado = user;
+    document.getElementById('userActions').style.display = 'block';
+    const nombreCompleto = [user.first_name || '', user.last_name || ''].filter(Boolean).join(' ') || 'Sin nombre';
+    
+    document.getElementById('selectedUserInfo').innerHTML = `
+        <h5>
+            <i class="fa fa-user"></i> ${nombreCompleto}
+            <small class="text-muted">(${user.username || 'Sin usuario'})</small>
+        </h5>
+        <p><i class="fa fa-envelope"></i> ${user.email || 'Sin email'}</p>
+    `;
+    document.getElementById('resetResult').innerHTML = '';
+    document.getElementById('mensajeAdicional').value = '';
+}
+
+function limpiarSeleccion() {
+    usuarioSeleccionado = null;
+    document.getElementById('userActions').style.display = 'none';
+    document.getElementById('selectedUserInfo').innerHTML = '';
+    document.getElementById('resetResult').innerHTML = '';
+    document.getElementById('mensajeAdicional').value = '';
+}
+
+function restablecerPassword(notificar = true) {
+    if (!usuarioSeleccionado) {
+        alert('Por favor seleccione un usuario primero');
+        return;
+    }
+    
+    const mensajeAdicional = document.getElementById('mensajeAdicional').value.trim();
+    const resultDiv = document.getElementById('resetResult');
+    resultDiv.innerHTML = '<div class="text-center"><i class="fa fa-spinner fa-spin"></i> Restableciendo contraseña...</div>';
+    
+    const payload = {
+        user_id: usuarioSeleccionado.id,
+        notificar: notificar
+    };
+    
+    if (mensajeAdicional) {
+        payload.mensaje_adicional = mensajeAdicional;
+    }
+    
+    fetch('/password-reset-es/restablecer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.error}</div>`;
+            return;
+        }
+        
+        // Mostrar modal de éxito
+        const modalBody = document.getElementById('successModalBody');
+        let html = `<div class="alert alert-success">✅ ${data.mensaje}</div>`;
+        
+        if (!data.email_enviado && data.password_temporal) {
+            html += `
+                <div class="alert alert-warning">
+                    <i class="fa fa-warning"></i> No se pudo enviar el email.
+                    <div class="password-display" style="margin-top: 10px;">
+                        <strong>Contraseña temporal:</strong><br>
+                        <code style="font-size: 20px;">${data.password_temporal}</code>
+                        <button class="btn btn-sm btn-default" onclick="copiarPassword('${data.password_temporal}')" style="margin-left: 10px;">
+                            <i class="fa fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (data.email_enviado) {
+            html += `<div class="alert alert-info"><i class="fa fa-envelope"></i> Email enviado a ${usuarioSeleccionado.email}</div>`;
+        }
+        
+        modalBody.innerHTML = html;
+        $('#successModal').modal('show');
+        resultDiv.innerHTML = `<div class="alert alert-success">✅ Contraseña restablecida exitosamente</div>`;
+        
+        // Limpiar selección
+        limpiarSeleccion();
+        // Refrescar búsqueda
+        buscarUsuarios();
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+    });
+}
+
+function copiarPassword(password) {
+    navigator.clipboard.writeText(password).then(() => {
+        alert('¡Contraseña copiada al portapapeles!');
+    }).catch(() => {
+        // Fallback
+        const input = document.createElement('input');
+        input.value = password;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        alert('¡Contraseña copiada al portapapeles!');
+    });
+}
+
+// Enter key for search
+document.getElementById('userSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        buscarUsuarios();
+    }
+});
+
+// Auto-search with debounce
+let searchTimeout;
+document.getElementById('userSearch').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        if (this.value.length >= 3) {
+            buscarUsuarios();
+        }
+    }, 500);
+});
+
+// --- Funciones para Plantillas ---
+function cargarPlantilla() {
+    fetch('/password-reset-es/plantilla-email')
+    .then(response => response.json())
+    .then(data => {
+        if (data.template) {
+            document.getElementById('tplAsunto').value = data.template.asunto || '';
+            document.getElementById('tplSaludo').value = data.template.saludo || '';
+            document.getElementById('tplIntro').value = data.template.intro || '';
+            document.getElementById('tplEtiquetaPassword').value = data.template.etiqueta_password || '';
+            document.getElementById('tplNotaImportante').value = data.template.nota_importante || '';
+            document.getElementById('tplBotonAccion').value = data.template.boton_accion || '';
+            document.getElementById('tplCierre').value = data.template.cierre || '';
+            document.getElementById('tplFirma').value = data.template.firma || '';
+            document.getElementById('tplPiePagina').value = data.template.pie_pagina || '';
+        }
+    })
+    .catch(error => {
+        alert('Error cargando plantilla: ' + error.message);
+    });
+}
+
+function guardarPlantilla() {
+    const template = {
+        asunto: document.getElementById('tplAsunto').value,
+        saludo: document.getElementById('tplSaludo').value,
+        intro: document.getElementById('tplIntro').value,
+        etiqueta_password: document.getElementById('tplEtiquetaPassword').value,
+        nota_importante: document.getElementById('tplNotaImportante').value,
+        boton_accion: document.getElementById('tplBotonAccion').value,
+        cierre: document.getElementById('tplCierre').value,
+        firma: document.getElementById('tplFirma').value,
+        pie_pagina: document.getElementById('tplPiePagina').value
+    };
+    
+    fetch('/password-reset-es/guardar-plantilla', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ template: template })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('❌ Error: ' + data.error);
+        } else {
+            alert('✅ ' + data.mensaje);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error: ' + error.message);
+    });
+}
+
+// --- Auditoría ---
+function cargarAuditoria() {
+    const contentDiv = document.getElementById('auditLogContent');
+    contentDiv.innerHTML = '<div class="text-center"><i class="fa fa-spinner fa-spin fa-2x"></i> Cargando...</div>';
+    
+    fetch('/password-reset-es/auditoria')
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            contentDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+            return;
+        }
+        
+        if (!data.logs || data.logs.length === 0) {
+            contentDiv.innerHTML = '<div class="alert alert-info">No hay registros de auditoría</div>';
+            return;
+        }
+        
+        let html = `<table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Administrador</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        
+        data.logs.forEach(log => {
+            html += `<tr>
+                <td>${log.fecha ? new Date(log.fecha).toLocaleString('es-ES') : 'N/A'}</td>
+                <td>${log.admin_id || 'N/A'}</td>
+                <td>${log.recurso || log.accion || 'N/A'}</td>
+            </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        contentDiv.innerHTML = html;
+    })
+    .catch(error => {
+        contentDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+// Cargar auditoría cuando se active la pestaña
+document.querySelector('a[href="#auditTab"]').addEventListener('shown.bs.tab', function() {
+    cargarAuditoria();
+});
+
+// Cargar plantilla cuando se active su pestaña
+document.querySelector('a[href="#templateTab"]').addEventListener('shown.bs.tab', function() {
+    cargarPlantilla();
+});
+
+// Cargar plantilla al inicio
+setTimeout(cargarPlantilla, 500);
+</script>
+{% endblock %}
