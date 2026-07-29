@@ -1,4 +1,4 @@
-# sueprset6-reset-web-ui
+# superset6-reset-web-ui
 add a web ui reset option for admins for other accounts
 
 ./superset-custom/
